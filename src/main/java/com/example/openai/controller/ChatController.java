@@ -48,4 +48,13 @@ public class ChatController {
         return ResponseEntity.ok(result);
 
     }
+
+
+    @GetMapping("/ragAdvisorSearch")
+    public ResponseEntity<String> ragAdvisorSearch(@RequestParam("userPrompt") String userPrompt) {
+
+        String result = chatService.ragQuerywithAdvisor(userPrompt);
+        return ResponseEntity.ok(result);
+
+    }
 }

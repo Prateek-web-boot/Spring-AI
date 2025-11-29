@@ -14,4 +14,6 @@ public interface ChatService {
     public List<Document> fetchVectors(String similar);
 
     public String ragQuery(String q);
+
+    public String ragQuerywithAdvisor(String q);
 }

@@ -2,9 +2,11 @@ package com.example.openai.service;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -25,6 +27,8 @@ public class ChatServiceImpl implements ChatService {
 
     @Autowired
     private VectorStore vectorStore;
+    @Autowired
+    private ChatModel chatModel;
 
     public ChatServiceImpl(ChatClient chatClient) {
         this.chatClient = chatClient;
@@ -93,6 +97,25 @@ public class ChatServiceImpl implements ChatService {
         return chatClient.prompt()
                 .system(s -> s.text("Use the following context to answer, if no answer found say I Dont Know"))
                 .user(u -> u.text("Context:\n" + context + "\n\nQuestion: " + query))
+                .call()
+                .content();
+    }
+
+
+    @Override
+    public String ragQuerywithAdvisor(String query) {
+
+        //fetching similar results from vactor DB
+        var result = vectorStore.similaritySearch(
+                SearchRequest.builder().query(query).topK(3).similarityThreshold(0.5).build());
+
+        //converting the data from vectorDB to a single String
+        List<String> context = result.stream().map(Document::getText).toList();
+        var contextString = String.join(", ", context);
+
+        return chatClient.prompt()
+                .advisors(QuestionAnswerAdvisor.builder(vectorStore).build())
+                .user(query)
                 .call()
                 .content();
     }
